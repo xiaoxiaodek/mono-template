@@ -1,0 +1,50 @@
+version: "2"
+
+run:
+  timeout: 10m
+  tests: true
+  modules-download-mode: readonly
+  relative-path-mode: gomod
+
+linters:
+  default: standard
+  enable:
+    - bodyclose
+    - errorlint
+    - gosec
+    - misspell
+    - nolintlint
+    - sqlclosecheck
+    - testifylint
+  settings:
+    errcheck:
+      exclude-functions:
+        - (io.Closer).Close
+        - (io.ReadCloser).Close
+        - (net.Conn).Close
+        - (*database/sql.DB).Close
+        - (*database/sql.Conn).Close
+        - (*os.File).Close
+    staticcheck:
+      checks:
+        - all
+        - -QF*
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/vort-ads/vort-ads-template/apps
+  exclusions:
+    generated: lax

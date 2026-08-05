@@ -1,0 +1,132 @@
+# Local development only. The fallback credentials below are deliberately
+# non-production; override them through the shell for any shared environment.
+name: vort-ads-local
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-vort_ads}
+      POSTGRES_USER: ${POSTGRES_USER:-vort_ads}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-vort_ads_local_only}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ../../apps/control-api/migrations/000001_identity.up.sql:/docker-entrypoint-initdb.d/000001_identity.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  redis:
+    image: redis:8-alpine
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+      - --requirepass
+      - ${REDIS_PASSWORD:-redis_local_only}
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis_local_only}
+    ports:
+      - "127.0.0.1:${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli --no-auth-warning -a $${REDIS_PASSWORD} ping | grep PONG"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  control-api:
+    build:
+      context: ../..
+      dockerfile: deployments/docker/Dockerfile.control-api
+    environment:
+      APP_ENV: dev
+      CONFIG_DIR: /app/configs
+      DATABASE_URL: postgresql://${POSTGRES_USER:-vort_ads}:${POSTGRES_PASSWORD:-vort_ads_local_only}@postgres:5432/${POSTGRES_DB:-vort_ads}?sslmode=disable
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis_local_only}
+      JWT_SECRET: ${JWT_SECRET:-local-development-jwt-secret-change-me}
+    configs:
+      - source: control_api_local_config
+        target: /app/configs/dev.yaml
+    ports:
+      - "127.0.0.1:${CONTROL_API_PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/readyz"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+    restart: unless-stopped
+
+  admin-web:
+    image: node:24-alpine
+    working_dir: /workspace/frontend
+    command: >-
+      sh -c "corepack enable && pnpm install --frozen-lockfile &&
+      pnpm --filter admin-web dev --host 0.0.0.0 --port 5173"
+    environment:
+      VITE_CONTROL_API_BASE_URL: http://localhost:${CONTROL_API_PORT:-8080}
+    volumes:
+      - ../../frontend:/workspace/frontend
+      - frontend_node_modules:/workspace/frontend/node_modules
+    ports:
+      - "127.0.0.1:${ADMIN_WEB_PORT:-5173}:5173"
+    depends_on:
+      control-api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:5173/"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 20s
+    restart: unless-stopped
+
+configs:
+  # Compose-only override: containers use service DNS while the checked-in
+  # configs/dev.yaml keeps host-based local development on localhost.
+  control_api_local_config:
+    content: |
+      app:
+        name: vort-ads-control-api
+        env: dev
+      http:
+        addr: ":8080"
+        read_timeout: 5s
+        write_timeout: 10s
+        idle_timeout: 60s
+        shutdown_timeout: 10s
+        max_body_bytes: 1048576
+      security:
+        access_token_ttl: 15m
+        refresh_token_ttl: 168h
+        trusted_proxies: []
+      cors:
+        allowed_origins: ["http://localhost:${ADMIN_WEB_PORT:-5173}"]
+      database:
+        dsn_env: "DATABASE_URL"
+        max_open_conns: 20
+        max_idle_conns: 5
+        conn_max_lifetime: 30m
+      redis:
+        addr: "redis:6379"
+        required: true
+      observability:
+        pprof_enabled: false
+
+volumes:
+  postgres_data:
+  redis_data:
+  frontend_node_modules:

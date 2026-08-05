@@ -1,0 +1,35 @@
+# === 系统文件 ===
+.DS_Store
+
+# === 环境与配置文件 ===
+.env
+.env.*
+!.env.example
+
+# === 依赖包与包管理器缓存 ===
+node_modules/
+.pnpm-store/
+.gocache/
+frontend/node_modules/
+frontend/.pnpm-store/
+
+# === 编译构建与测试产物 ===
+bin/
+dist/
+coverage/
+playwright-report/
+test-results/
+
+# === 编辑器与开发工具配置 ===
+.idea/
+.vscode/
+
+# === 临时文件、日志与工具缓存 ===
+*.log
+.worktrees/
+.codegraph/
+.vite/
+.superpowers/
+
+# === 项目文档 ===
+docs/*

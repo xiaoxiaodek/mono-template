@@ -1,0 +1,26 @@
+app:
+  name: vort-ads-control-api
+  env: test
+http:
+  addr: ":0"
+  read_timeout: 2s
+  write_timeout: 2s
+  idle_timeout: 10s
+  shutdown_timeout: 2s
+  max_body_bytes: 1048576
+security:
+  access_token_ttl: 5m
+  refresh_token_ttl: 1h
+  trusted_proxies: []
+cors:
+  allowed_origins: ["http://localhost:5173"]
+database:
+  dsn_env: "TEST_DATABASE_URL"
+  max_open_conns: 5
+  max_idle_conns: 2
+  conn_max_lifetime: 5m
+redis:
+  addr: "localhost:6379"
+  required: false
+observability:
+  pprof_enabled: false

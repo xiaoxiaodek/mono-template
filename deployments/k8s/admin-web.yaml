@@ -1,0 +1,82 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: admin-web
+  labels:
+    app.kubernetes.io/name: admin-web
+    app.kubernetes.io/part-of: vort-ads
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: admin-web
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: admin-web
+        app.kubernetes.io/part-of: vort-ads
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: admin-web
+          # Skeleton image: publish the Vite production build behind an
+          # unprivileged static server listening on port 8080.
+          image: ghcr.io/vort-ads/admin-web:0.1.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            timeoutSeconds: 2
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 2
+          resources:
+            requests:
+              cpu: 25m
+              memory: 32Mi
+            limits:
+              cpu: 250m
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            readOnlyRootFilesystem: true
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: admin-web
+  labels:
+    app.kubernetes.io/name: admin-web
+    app.kubernetes.io/part-of: vort-ads
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: admin-web
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP
