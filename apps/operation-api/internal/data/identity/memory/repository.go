@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	bizidentity "github.com/vort-ads/vort-ads-template/apps/control-api/internal/biz/identity"
+	bizidentity "github.com/vort-ads/vort-ads-template/apps/operation-api/internal/biz/identity"
 )
 
 var _ bizidentity.UserRepository = (*UserRepository)(nil)

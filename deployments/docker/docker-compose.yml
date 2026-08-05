@@ -13,7 +13,7 @@ services:
       - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ../../apps/control-api/migrations/000001_identity.up.sql:/docker-entrypoint-initdb.d/000001_identity.sql:ro
+      - ../../apps/operation-api/migrations/000001_identity.up.sql:/docker-entrypoint-initdb.d/000001_identity.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
@@ -42,10 +42,10 @@ services:
       retries: 20
     restart: unless-stopped
 
-  control-api:
+  operation-api:
     build:
       context: ../..
-      dockerfile: deployments/docker/Dockerfile.control-api
+      dockerfile: deployments/docker/Dockerfile.operation-api
     environment:
       APP_ENV: dev
       CONFIG_DIR: /app/configs
@@ -53,10 +53,10 @@ services:
       REDIS_PASSWORD: ${REDIS_PASSWORD:-redis_local_only}
       JWT_SECRET: ${JWT_SECRET:-local-development-jwt-secret-change-me}
     configs:
-      - source: control_api_local_config
+      - source: operation_api_local_config
         target: /app/configs/dev.yaml
     ports:
-      - "127.0.0.1:${CONTROL_API_PORT:-8080}:8080"
+      - "127.0.0.1:${OPERATION_API_PORT:-8080}:8080"
     depends_on:
       postgres:
         condition: service_healthy
@@ -70,21 +70,21 @@ services:
       start_period: 10s
     restart: unless-stopped
 
-  admin-web:
+  operation-web:
     image: node:24-alpine
     working_dir: /workspace/frontend
     command: >-
       sh -c "corepack enable && pnpm install --frozen-lockfile &&
-      pnpm --filter admin-web dev --host 0.0.0.0 --port 5173"
+      pnpm --filter operation-web dev --host 0.0.0.0 --port 5173"
     environment:
-      VITE_CONTROL_API_BASE_URL: http://localhost:${CONTROL_API_PORT:-8080}
+      VITE_OPERATION_API_BASE_URL: http://localhost:${OPERATION_API_PORT:-8080}
     volumes:
       - ../../frontend:/workspace/frontend
       - frontend_node_modules:/workspace/frontend/node_modules
     ports:
-      - "127.0.0.1:${ADMIN_WEB_PORT:-5173}:5173"
+      - "127.0.0.1:${OPERATION_WEB_PORT:-5173}:5173"
     depends_on:
-      control-api:
+      operation-api:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:5173/"]
@@ -97,10 +97,10 @@ services:
 configs:
   # Compose-only override: containers use service DNS while the checked-in
   # configs/dev.yaml keeps host-based local development on localhost.
-  control_api_local_config:
+  operation_api_local_config:
     content: |
       app:
-        name: vort-ads-control-api
+        name: vort-ads-operation-api
         env: dev
       http:
         addr: ":8080"
@@ -114,7 +114,11 @@ configs:
         refresh_token_ttl: 168h
         trusted_proxies: []
       cors:
-        allowed_origins: ["http://localhost:${ADMIN_WEB_PORT:-5173}"]
+        allowed_origins: ["http://localhost:${OPERATION_WEB_PORT:-5173}"]
+        allowed_methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+        allowed_headers: ["Authorization", "Content-Type", "X-Request-ID"]
+        allow_credentials: true
+        max_age: 12h
       database:
         dsn_env: "DATABASE_URL"
         max_open_conns: 20
@@ -125,6 +129,11 @@ configs:
         required: true
       observability:
         pprof_enabled: false
+        swagger_enabled: true
+        tracing:
+          enabled: false
+          endpoint: ""
+          sampling_ratio: 1.0
 
 volumes:
   postgres_data:

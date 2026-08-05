@@ -10,8 +10,23 @@ import (
 	"path/filepath"
 	"syscall"
 
-	"github.com/vort-ads/vort-ads-template/apps/control-api/internal/bootstrap"
+	"github.com/vort-ads/vort-ads-template/apps/operation-api/internal/bootstrap"
 )
+
+// @title          Vort Ads Operation API
+// @version        0.1.0
+// @description    Identity and control-plane API for the Vort Ads platform.
+// @contact.name   Vort Ads Team
+//
+// @license.name  Proprietary
+//
+// @host      localhost:8080
+// @BasePath  /api/v1
+//
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and the JWT access token.
 
 func main() {
 	if err := run(); err != nil {

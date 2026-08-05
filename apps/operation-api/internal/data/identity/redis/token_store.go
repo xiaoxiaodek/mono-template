@@ -8,7 +8,7 @@ import (
 
 	redisclient "github.com/redis/go-redis/v9"
 
-	bizidentity "github.com/vort-ads/vort-ads-template/apps/control-api/internal/biz/identity"
+	bizidentity "github.com/vort-ads/vort-ads-template/apps/operation-api/internal/biz/identity"
 )
 
 const refreshTokenKeyPrefix = "identity:refresh:"

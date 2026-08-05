@@ -4,9 +4,9 @@ import (
 	"testing"
 	"time"
 
-	bizidentity "github.com/vort-ads/vort-ads-template/apps/control-api/internal/biz/identity"
-	identitydata "github.com/vort-ads/vort-ads-template/apps/control-api/internal/data/identity"
-	"github.com/vort-ads/vort-ads-template/apps/internal/platform/security"
+	bizidentity "github.com/vort-ads/vort-ads-template/apps/operation-api/internal/biz/identity"
+	identitydata "github.com/vort-ads/vort-ads-template/apps/operation-api/internal/data/identity"
+	"github.com/vort-ads/vort-ads-template/internal/platform/security"
 )
 
 func TestTokenManagerCrossVerifiesAndPreservesPrincipal(t *testing.T) {

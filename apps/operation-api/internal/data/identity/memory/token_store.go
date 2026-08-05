@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	bizidentity "github.com/vort-ads/vort-ads-template/apps/control-api/internal/biz/identity"
+	bizidentity "github.com/vort-ads/vort-ads-template/apps/operation-api/internal/biz/identity"
 )
 
 var _ bizidentity.RefreshTokenStore = (*TokenStore)(nil)

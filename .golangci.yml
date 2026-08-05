@@ -31,6 +31,8 @@ linters:
         - -QF*
   exclusions:
     generated: lax
+    paths:
+      - apps/operation-api/docs
     presets:
       - comments
 
@@ -45,6 +47,6 @@ formatters:
   settings:
     goimports:
       local-prefixes:
-        - github.com/vort-ads/vort-ads-template/apps
+        - github.com/vort-ads/vort-ads-template
   exclusions:
     generated: lax

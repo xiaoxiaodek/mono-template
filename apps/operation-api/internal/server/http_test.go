@@ -11,13 +11,13 @@ import (
 
 	"golang.org/x/time/rate"
 
-	bizidentity "github.com/vort-ads/vort-ads-template/apps/control-api/internal/biz/identity"
-	identitydata "github.com/vort-ads/vort-ads-template/apps/control-api/internal/data/identity"
-	"github.com/vort-ads/vort-ads-template/apps/control-api/internal/data/identity/memory"
-	identityservice "github.com/vort-ads/vort-ads-template/apps/control-api/internal/service/identity"
-	"github.com/vort-ads/vort-ads-template/apps/internal/middleware"
-	"github.com/vort-ads/vort-ads-template/apps/internal/platform/security"
-	"github.com/vort-ads/vort-ads-template/apps/pkg/idgen"
+	bizidentity "github.com/vort-ads/vort-ads-template/apps/operation-api/internal/biz/identity"
+	identitydata "github.com/vort-ads/vort-ads-template/apps/operation-api/internal/data/identity"
+	"github.com/vort-ads/vort-ads-template/apps/operation-api/internal/data/identity/memory"
+	identityservice "github.com/vort-ads/vort-ads-template/apps/operation-api/internal/service/identity"
+	"github.com/vort-ads/vort-ads-template/internal/middleware"
+	"github.com/vort-ads/vort-ads-template/internal/platform/security"
+	"github.com/vort-ads/vort-ads-template/pkg/idgen"
 )
 
 type recordingKeyedLimiter struct {
@@ -105,8 +105,11 @@ func TestRateLimitAppliesOnlyToAPIRoutes(t *testing.T) {
 		nil,
 	)
 	identityHandler := identityservice.NewHandler(usecase, middleware.Auth(manager))
-	clientLimiter := middleware.NewClientIPRateLimiter(rate.Every(time.Hour), 1, time.Hour, 100)
-	router := NewHTTPServer(Dependencies{IdentityHandler: &identityHandler, RateLimiter: clientLimiter})
+	clientLimiter := middleware.NewLocalKeyedRateLimiter(rate.Every(time.Hour), 1, time.Hour, 100)
+	router := NewHTTPServer(Dependencies{
+		IdentityHandler:      &identityHandler,
+		ClientIPKeyedLimiter: clientLimiter,
+	})
 
 	request := func(path string) int {
 		response := httptest.NewRecorder()
@@ -161,7 +164,7 @@ func TestGlobalIPAndAuthenticatedUserRateLimitsAreWiredInOrder(t *testing.T) {
 	request.Header.Set("Authorization", "Bearer "+token)
 	router.ServeHTTP(response, request)
 
-	if got := globalLimiter.snapshot(); len(got) != 1 || got[0] != "global:control-api" {
+	if got := globalLimiter.snapshot(); len(got) != 1 || got[0] != "global:operation-api" {
 		t.Fatalf("global keys = %#v", got)
 	}
 	if got := ipLimiter.snapshot(); len(got) != 1 || got[0] != "ip:192.0.2.9" {
@@ -227,11 +230,11 @@ func newRateLimitedIdentityRouter(t *testing.T, trustedProxies []string) http.Ha
 		nil,
 	)
 	identityHandler := identityservice.NewHandler(usecase, middleware.Auth(manager))
-	clientLimiter := middleware.NewClientIPRateLimiter(rate.Every(time.Hour), 1, time.Hour, 100)
+	clientLimiter := middleware.NewLocalKeyedRateLimiter(rate.Every(time.Hour), 1, time.Hour, 100)
 	return NewHTTPServer(Dependencies{
-		IdentityHandler: &identityHandler,
-		RateLimiter:     clientLimiter,
-		TrustedProxies:  trustedProxies,
+		IdentityHandler:      &identityHandler,
+		ClientIPKeyedLimiter: clientLimiter,
+		TrustedProxies:       trustedProxies,
 	})
 }
 

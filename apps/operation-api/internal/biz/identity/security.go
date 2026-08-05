@@ -14,6 +14,9 @@ type Principal struct {
 	Email       string
 	Roles       []string
 	Permissions []string
+	// JTI is an optional unique token identifier populated when a new
+	// refresh token is issued so every JWT is cryptographically distinct.
+	JTI string
 }
 
 type TokenClaims struct {

@@ -13,8 +13,8 @@ import (
 
 func TestBizIdentityImportBoundary(t *testing.T) {
 	forbidden := []string{
-		"/control-api/internal/data/", "/control-api/internal/service/", "/control-api/internal/server",
-		"/control-api/internal/modules/", "/apps/internal/platform/security", "/apps/pkg/idgen",
+		"/operation-api/internal/data/", "/operation-api/internal/service/", "/operation-api/internal/server",
+		"/operation-api/internal/modules/", "/apps/internal/platform/security", "/apps/pkg/idgen",
 		"github.com/gin-gonic/gin", "github.com/jackc/pgx/", "github.com/redis/go-redis/",
 	}
 	err := filepath.WalkDir(".", func(path string, entry fs.DirEntry, err error) error {

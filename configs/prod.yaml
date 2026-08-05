@@ -1,5 +1,5 @@
 app:
-  name: vort-ads-control-api
+  name: vort-ads-operation-api
   env: prod
 http:
   addr: ":8080"
@@ -13,7 +13,11 @@ security:
   refresh_token_ttl: 168h
   trusted_proxies: []
 cors:
-  allowed_origins: []
+  allowed_origins: ["https://admin.example.com"]
+  allowed_methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+  allowed_headers: ["Authorization", "Content-Type", "X-Request-ID"]
+  allow_credentials: true
+  max_age: 1h
 database:
   dsn_env: "DATABASE_URL"
   max_open_conns: 50
@@ -22,5 +26,11 @@ database:
 redis:
   addr: "redis:6379"
   required: true
+  ratelimit_fail_open: false
 observability:
   pprof_enabled: false
+  swagger_enabled: false
+  tracing:
+    enabled: false
+    endpoint: ""
+    sampling_ratio: 1.0

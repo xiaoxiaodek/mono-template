@@ -8,10 +8,10 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	redisclient "github.com/redis/go-redis/v9"
 
-	"github.com/vort-ads/vort-ads-template/apps/control-api/internal/data/identity/memory"
-	"github.com/vort-ads/vort-ads-template/apps/control-api/internal/data/identity/postgres"
-	identityredis "github.com/vort-ads/vort-ads-template/apps/control-api/internal/data/identity/redis"
-	"github.com/vort-ads/vort-ads-template/apps/internal/middleware"
+	"github.com/vort-ads/vort-ads-template/apps/operation-api/internal/data/identity/memory"
+	"github.com/vort-ads/vort-ads-template/apps/operation-api/internal/data/identity/postgres"
+	identityredis "github.com/vort-ads/vort-ads-template/apps/operation-api/internal/data/identity/redis"
+	"github.com/vort-ads/vort-ads-template/internal/middleware"
 )
 
 func TestSelectRefreshTokenStoreUsesRedisWhenAvailable(t *testing.T) {
@@ -91,7 +91,7 @@ func TestSelectRateLimitPoliciesUsesRedisTokenBucketsWhenAvailable(t *testing.T)
 	client := redisclient.NewClient(&redisclient.Options{Addr: "localhost:0"})
 	t.Cleanup(func() { _ = client.Close() })
 
-	policies := selectRateLimitPolicies(client, true, false)
+	policies := selectRateLimitPolicies(client, true, false, false)
 	for name, limiter := range map[string]any{
 		"global": policies.global,
 		"IP":     policies.clientIP,
@@ -104,7 +104,7 @@ func TestSelectRateLimitPoliciesUsesRedisTokenBucketsWhenAvailable(t *testing.T)
 }
 
 func TestSelectRateLimitPoliciesUsesBoundedLocalFallbackWhenOptionalRedisUnavailable(t *testing.T) {
-	policies := selectRateLimitPolicies(nil, false, false)
+	policies := selectRateLimitPolicies(nil, false, false, false)
 	for name, limiter := range map[string]any{
 		"global": policies.global,
 		"IP":     policies.clientIP,
@@ -120,7 +120,7 @@ func TestSelectRateLimitPoliciesKeepsRedisFailClosedWhenRequiredButUnavailable(t
 	client := redisclient.NewClient(&redisclient.Options{Addr: "localhost:0"})
 	t.Cleanup(func() { _ = client.Close() })
 
-	policies := selectRateLimitPolicies(client, false, true)
+	policies := selectRateLimitPolicies(client, false, true, false)
 	if _, ok := policies.global.(*middleware.RedisTokenBucketRateLimiter); !ok {
 		t.Fatalf("global limiter type = %T, want Redis token bucket", policies.global)
 	}

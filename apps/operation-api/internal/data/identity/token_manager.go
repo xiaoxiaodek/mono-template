@@ -1,8 +1,8 @@
 package identitydata
 
 import (
-	bizidentity "github.com/vort-ads/vort-ads-template/apps/control-api/internal/biz/identity"
-	"github.com/vort-ads/vort-ads-template/apps/internal/platform/security"
+	bizidentity "github.com/vort-ads/vort-ads-template/apps/operation-api/internal/biz/identity"
+	"github.com/vort-ads/vort-ads-template/internal/platform/security"
 )
 
 var _ bizidentity.TokenManager = TokenManager{}
@@ -31,7 +31,7 @@ func (m TokenManager) VerifyRefreshToken(token string) (bizidentity.TokenClaims,
 	return toBizClaims(claims), nil
 }
 func toPlatformPrincipal(principal bizidentity.Principal) security.Principal {
-	return security.Principal{UserID: principal.UserID, Email: principal.Email, Roles: append([]string(nil), principal.Roles...), Permissions: append([]string(nil), principal.Permissions...)}
+	return security.Principal{UserID: principal.UserID, Email: principal.Email, Roles: append([]string(nil), principal.Roles...), Permissions: append([]string(nil), principal.Permissions...), JTI: principal.JTI}
 }
 func toBizClaims(claims *security.Claims) bizidentity.TokenClaims {
 	if claims == nil {

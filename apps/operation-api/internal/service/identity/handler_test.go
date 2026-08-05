@@ -11,13 +11,13 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	bizidentity "github.com/vort-ads/vort-ads-template/apps/control-api/internal/biz/identity"
-	identitydata "github.com/vort-ads/vort-ads-template/apps/control-api/internal/data/identity"
-	"github.com/vort-ads/vort-ads-template/apps/control-api/internal/data/identity/memory"
-	"github.com/vort-ads/vort-ads-template/apps/internal/middleware"
-	"github.com/vort-ads/vort-ads-template/apps/internal/platform/apperrors"
-	"github.com/vort-ads/vort-ads-template/apps/internal/platform/security"
-	"github.com/vort-ads/vort-ads-template/apps/pkg/idgen"
+	bizidentity "github.com/vort-ads/vort-ads-template/apps/operation-api/internal/biz/identity"
+	identitydata "github.com/vort-ads/vort-ads-template/apps/operation-api/internal/data/identity"
+	"github.com/vort-ads/vort-ads-template/apps/operation-api/internal/data/identity/memory"
+	"github.com/vort-ads/vort-ads-template/internal/middleware"
+	"github.com/vort-ads/vort-ads-template/internal/platform/apperrors"
+	"github.com/vort-ads/vort-ads-template/internal/platform/security"
+	"github.com/vort-ads/vort-ads-template/pkg/idgen"
 )
 
 func TestRegisterRoutesRegistersExpectedPaths(t *testing.T) {

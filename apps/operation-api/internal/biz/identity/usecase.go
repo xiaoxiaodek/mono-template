@@ -166,7 +166,7 @@ func (u *Usecase) generateTokenPair(user User) (tokenPairCandidate, error) {
 	if err != nil {
 		return tokenPairCandidate{}, err
 	}
-	principal.Permissions = []string{nonce}
+	principal.JTI = nonce
 	refreshToken, err := u.tokenManager.SignRefreshToken(principal)
 	if err != nil {
 		return tokenPairCandidate{}, err

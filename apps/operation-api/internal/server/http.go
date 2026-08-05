@@ -8,12 +8,17 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/zerolog"
+	swaggerfiles "github.com/swaggo/files"
+	ginswagger "github.com/swaggo/gin-swagger"
+	swag "github.com/swaggo/swag"
+	"go.opentelemetry.io/otel/trace"
 
-	identityservice "github.com/vort-ads/vort-ads-template/apps/control-api/internal/service/identity"
-	"github.com/vort-ads/vort-ads-template/apps/internal/middleware"
-	"github.com/vort-ads/vort-ads-template/apps/internal/platform/apperrors"
-	"github.com/vort-ads/vort-ads-template/apps/internal/platform/observability"
-	"github.com/vort-ads/vort-ads-template/apps/internal/platform/response"
+	_ "github.com/vort-ads/vort-ads-template/apps/operation-api/docs"
+	identityservice "github.com/vort-ads/vort-ads-template/apps/operation-api/internal/service/identity"
+	"github.com/vort-ads/vort-ads-template/internal/middleware"
+	"github.com/vort-ads/vort-ads-template/internal/platform/apperrors"
+	"github.com/vort-ads/vort-ads-template/internal/platform/observability"
+	"github.com/vort-ads/vort-ads-template/internal/platform/response"
 )
 
 const (
@@ -32,13 +37,14 @@ type Dependencies struct {
 	GlobalRateLimiter    middleware.KeyedRateLimiter
 	ClientIPKeyedLimiter middleware.KeyedRateLimiter
 	UserRateLimiter      middleware.KeyedRateLimiter
-	// RateLimiter is retained for callers using the original local IP limiter.
-	RateLimiter    *middleware.ClientIPRateLimiter
-	AllowedOrigins []string
-	TrustedProxies []string
-	MaxBodyBytes   int64
-	RequestTimeout time.Duration
-	PprofEnabled   bool
+	AuthIPRateLimiter    middleware.KeyedRateLimiter
+	CORSConfig           middleware.CORSConfig
+	TrustedProxies       []string
+	MaxBodyBytes         int64
+	RequestTimeout       time.Duration
+	PprofEnabled         bool
+	SwaggerEnabled       bool
+	Tracer               trace.Tracer
 }
 
 func NewHTTPServer(dependencies Dependencies) *gin.Engine {
@@ -58,9 +64,11 @@ func NewHTTPServer(dependencies Dependencies) *gin.Engine {
 
 	engine.Use(
 		middleware.RequestID(),
+		middleware.SecurityHeaders(),
+		middleware.Tracing(dependencies.Tracer),
 		middleware.Recovery(dependencies.Logger),
 		middleware.AccessLog(dependencies.Logger),
-		middleware.CORS(dependencies.AllowedOrigins),
+		middleware.CORS(dependencies.CORSConfig),
 		middleware.BodyLimit(maxBodyBytes),
 		middleware.Timeout(requestTimeout),
 		observeRequests(dependencies.Metrics),
@@ -80,11 +88,25 @@ func NewHTTPServer(dependencies Dependencies) *gin.Engine {
 	if dependencies.PprofEnabled {
 		observability.RegisterPprofRoutes(engine, true)
 	}
+	if dependencies.SwaggerEnabled {
+		engine.GET("/swagger/doc.json", func(c *gin.Context) {
+			doc, err := swag.ReadDoc()
+			if err != nil {
+				c.AbortWithStatus(http.StatusInternalServerError)
+				return
+			}
+			c.Header("Content-Type", "application/json; charset=utf-8")
+			c.String(http.StatusOK, doc)
+		})
+		engine.GET("/docs/*any", ginswagger.WrapHandler(swaggerfiles.Handler,
+			ginswagger.URL("/swagger/doc.json"),
+		))
+	}
 	if dependencies.IdentityHandler != nil {
 		api := engine.Group("/api/v1")
-		api.Use(middleware.KeyedRateLimit(dependencies.GlobalRateLimiter, middleware.GlobalRateLimitKey("control-api")))
+		api.Use(middleware.KeyedRateLimit(dependencies.GlobalRateLimiter, middleware.GlobalRateLimitKey("operation-api")))
 		api.Use(middleware.KeyedRateLimit(dependencies.ClientIPKeyedLimiter, middleware.ClientIPRateLimitKey()))
-		api.Use(middleware.RateLimit(dependencies.RateLimiter))
+		api.Use(middleware.KeyedRateLimit(dependencies.AuthIPRateLimiter, middleware.AuthEndpointIPKey()))
 		dependencies.IdentityHandler.RegisterRoutes(
 			api,
 			middleware.KeyedRateLimit(dependencies.UserRateLimiter, middleware.AuthenticatedUserRateLimitKey()),

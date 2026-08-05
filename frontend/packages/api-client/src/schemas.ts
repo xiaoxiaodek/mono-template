@@ -18,8 +18,6 @@ export const userSchema = z.object({
 export const tokenPairSchema = z.object({
   access_token: z.string().min(1),
   refresh_token: z.string().min(1),
-  token_type: z.literal("Bearer").optional(),
-  expires_in: z.number().int().positive().optional(),
 });
 
 export const authDataSchema = tokenPairSchema.extend({

@@ -15,7 +15,7 @@ import {
   storeAccessToken,
 } from "./routes/authStorage";
 
-const apiBaseUrl = import.meta.env.VITE_CONTROL_API_BASE_URL ?? "http://localhost:8080";
+const apiBaseUrl = import.meta.env.VITE_OPERATION_API_BASE_URL ?? "http://localhost:8080";
 
 function AdminApp() {
   const client = useMemo(() => new ControlApiClient(apiBaseUrl), []);

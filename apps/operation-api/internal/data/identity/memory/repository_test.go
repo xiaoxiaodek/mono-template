@@ -5,8 +5,8 @@ import (
 	"errors"
 	"testing"
 
-	bizidentity "github.com/vort-ads/vort-ads-template/apps/control-api/internal/biz/identity"
-	"github.com/vort-ads/vort-ads-template/apps/control-api/internal/data/identity/memory"
+	bizidentity "github.com/vort-ads/vort-ads-template/apps/operation-api/internal/biz/identity"
+	"github.com/vort-ads/vort-ads-template/apps/operation-api/internal/data/identity/memory"
 )
 
 func TestUserRepositoryRejectsDuplicateEmail(t *testing.T) {
